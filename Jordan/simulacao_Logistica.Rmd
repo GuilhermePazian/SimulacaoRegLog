@@ -1,0 +1,95 @@
+---
+title: "Regressão logistica com dados simulados"
+author: "Guilherme"
+date: "28 de maio de 2018"
+output: pdf_document
+---
+
+```{r}
+source("diag_bin.R")
+source("envel_bin.R")
+
+set.seed(666)
+x1 = rnorm(1000)           # some continuous variables 
+x2 = rnorm(1000)
+z = 1 + 2*x1 + 3*x2        # linear combination with a bias
+pr = 1/(1+exp(-z))         # pass through an inv-logit function
+y = rbinom(1000,1,pr)      # bernoulli response variable
+
+#now feed it to glm:
+df = data.frame(y=y,x1=x1,x2=x2)
+fit=glm( y~x1+x2,data=df,family="binomial")
+residuals(fit)
+Call:  glm(formula = y ~ x1 + x2, family = "binomial", data = df)
+
+Coefficients:
+(Intercept)           x1           x2  
+     0.9915       2.2731       3.1853  
+
+Degrees of Freedom: 999 Total (i.e. Null);  997 Residual
+Null Deviance:      1355 
+Residual Deviance: 582.9        AIC: 588.9 
+```
+
+```{r}
+# fonte: https://www.r-bloggers.com/example-7-2-simulate-data-from-a-logistic-regression/
+intercept <- 0
+beta <- 0.5
+xtest <- rnorm(1000,1,1)
+linpred <- intercept + (xtest * beta)
+prob <- exp(linpred)/(1 + exp(linpred))
+runis <- runif(1000,0,1)
+ytest <- ifelse(runis < prob,1,0)
+
+
+fit2 = glm(ytest ~ xtest,family = "binomial")
+
+plot(fit2)
+summary(fit2)
+diagBern2(fit2)
+envelBinom(fit2,"logit")
+```
+
+```{r}
+set.seed(157) #para que os resultados sejam reprodutíveis
+
+library(MASS)
+
+mu = c(0,3,7) #vetor de médias das variáveis (respectivamente y,x1 e x2) OBS: mantenha a média de y = 0
+
+vy <- 1 #variancia da variável resposta (y)
+
+vx1 <- 5 #variancia da variável explicativa (x1)
+
+vx2 <- 3 #variancia da variável explicativa (x2)
+
+cyx1 <- .6 #covariancia entre a variável resposta (y) e a explicativa (x1)
+
+cyx2 <- .3 #covariancia entre a variável resposta (y) e a explicativa (x2)
+
+cx1x2 <- 0 #covariancia entre as variáveis explicativas (é bom manter zero ou um valor bem baixo para não ter nenhum problema de multicolinearidade)
+
+#Para se ter uma idéia dos dados gerados, veja quais são as correlações (populacionais) entre as variáveis x1 e x2 em comparação com a y:
+
+coryx1 <- cyx1/(sqrt(vy)*sqrt(vx1))
+
+coryx2 <- cyx2/(sqrt(vy)*sqrt(vx2))
+
+sigma2 <- matrix(c(vy,cyx1,cyx2,cyx1,vx1,cx1x2,cyx2,cx1x2,vx2),nrow = 3)
+
+n <- 1000 #numero de observações geradas
+
+dados_simulados <- as.data.frame(mvrnorm(n,mu,sigma2))
+
+names(dados_simulados) <- c("Y","X1","X2")
+
+#runis <- runif(1000,0,1) #dados aleatórios entre 0 e 1
+
+dados_simulados$Y <- ifelse(dados_simulados$Y < 0,1,0)
+
+
+fit3 = glm(Y ~ X1 + X2 ,family = "binomial",data = dados_simulados)
+
+plot(fit3)
+```
+
