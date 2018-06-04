@@ -32,22 +32,32 @@ Residual Deviance: 582.9        AIC: 588.9
 ```
 
 ```{r}
+set.seed(123)
+source("diag_Bern.R")
+source("envel_Bern.R")
 # fonte: https://www.r-bloggers.com/example-7-2-simulate-data-from-a-logistic-regression/
-intercept <- 0
-beta <- 0.5
-xtest <- rnorm(1000,1,1)
-linpred <- intercept + (xtest * beta)
-prob <- exp(linpred)/(1 + exp(linpred))
-runis <- runif(1000,0,1)
-ytest <- ifelse(runis < prob,1,0)
+beta0 <- 0
+beta1 <- 0.5
+x1 <- rnorm(1000,1,1)
+beta2 <- 0.9
+x2 <- rnorm(1000,1,1)
+preditorlinear <- beta0 + beta1*x1 + beta2*x2
+prob <- exp(preditorlinear)/(1 + exp(preditorlinear))
+vaunif <- runif(1000,0,1)
+ysim <- ifelse(vaunif < prob,1,0)
 
 
-fit2 = glm(ytest ~ xtest,family = "binomial")
+fit2 = glm(ysim ~ x1 + x2,family = "binomial")
 
 plot(fit2)
 summary(fit2)
-diagBern2(fit2)
-envelBinom(fit2,"logit")
+diagBern(fit2)
+envelBern(fit2,"logit")
+
+desvio <- deviance(fit2)
+p <- ncol(model.matrix(fit2))
+n <- length(ytest)
+pdesvio <- 1-pchisq(desvio,df=n-p)
 ```
 
 ```{r}

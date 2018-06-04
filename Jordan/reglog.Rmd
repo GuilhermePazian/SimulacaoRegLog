@@ -1,0 +1,61 @@
+---
+title: "Untitled"
+author: "Guilherme Pazian"
+date: "4 de junho de 2018"
+output:
+  html_document:
+    df_print: paged
+---
+
+O código abaixo simula a variável resposta "ysim" com base nas variáveis explicativas "x1" e "x2". 
+
+- As variáveis x1 e x2 são geradas a partir da distribuição normal com média 1 e variância 1 (caso queira, pode mudar estes parâmetros).
+- Define-se os parâmetros beta0, beta1 e beta2. O vetor "preditorlinear" é gerado pela combinação linear das v.a. x1 e x2: beta0 + beta1*x1 + beta2*x2
+- O vetor "prob" é gerado aplicando a função inversa da função logito (que é a função de ligação usada na regressão logística) no vetor "preditorlinear".
+- São geradas variaveis aleatórias baseadas na distribuição uniforme e estas são comparadas com as probabilidades geradas no vetor "prob", definindo assim o vetor com observações binarias simuladas.
+```{r}
+set.seed(123)
+source("diag_Bern.R")
+source("envel_Bern.R")
+# fonte: https://www.r-bloggers.com/example-7-2-simulate-data-from-a-logistic-regression/
+beta0 <- 0
+beta1 <- 0.5
+x1 <- rnorm(1000,1,1)
+beta2 <- 0.9
+x2 <- rnorm(1000,1,1)
+preditorlinear <- beta0 + beta1*x1 + beta2*x2
+prob <- exp(preditorlinear)/(1 + exp(preditorlinear))
+vaunif <- runif(1000,0,1)
+ysim <- ifelse(vaunif < prob,1,0)
+```
+
+Abaixo é ajustado um modelo de regressão logistica com os dados simulados anteriormente.
+
+```{r}
+fit2 = glm(ysim ~ x1 + x2,family = "binomial")
+```
+
+Abaixo as estimativas dos parâmetros do modelo. É notavel que as estimativas dos parâmetros são muito proximas dos valores dos parâmetros definidos anteriormente (beta0, beta1 e beta2). 
+
+```{r}
+summary(fit2)
+```
+
+Análise de resíduos. Note que os resíduos se comportam da maneira prevista, evidenciando um bom ajuste do modelo:
+
+```{r}
+source("envel_Bern.R")
+envelBern(fit2,"logit")
+```
+
+
+Outro indicador para verificar o ajuste do modelo é a análise do Resíduo componente do desvio. Observe que o p-valor associado ao teste tem um valor bem elevado, indicando bom ajuste do modelo:
+
+```{r}
+desvio <- deviance(fit2)
+p <- ncol(model.matrix(fit2))
+n <- length(ytest)
+pdesvio <- 1-pchisq(desvio,df=n-p)
+```
+
+
